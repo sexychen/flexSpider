@@ -115,12 +115,16 @@ function fetchImgUrl() {
             }
             var sourcePath = selectedImdDiv && selectedImdDiv != null ? selectedImdDiv.children().first().children().first().children().first().children().first().attr('src') : undefined;
             series.img = sourcePath && sourcePath != null ? 'http:' + sourcePath.replace('/t_', '/') : 'null'
+            html = undefined
+            $ = undefined
+            listDivs = undefined
+            selectedImdDiv = undefined
             callback(null, series.page + 'Call back content');
         });
     };
 
     async.mapLimit(
-        seriesArr, 10,
+        seriesArr, 1,
         function (series, callback) {
             reptileMove(series, callback)
         },
@@ -128,8 +132,7 @@ function fetchImgUrl() {
             console.log('----------------------------')
             console.log('图片地址抓取成功')
             console.log('----------------------------')
-            fs.writeFileSync('data.json', JSON.stringify(fetchData))
-            //fetchImg()
+            fetchImg()
         }
     );
 }
@@ -155,11 +158,7 @@ function fetchImg() {
                     });
                 }
                 else {
-                    console.error('retry=' + series.retry + 'error=' + error + ',sCode=' + series.sCode + ',img=' + series.img);
-                    if (series.retry != 'true') {
-                        series.retry = 'true';
-                        reptileMove(series, callback);
-                    }
+                    series.error = '1'
                 }
             });
         }
@@ -175,6 +174,7 @@ function fetchImg() {
             console.log('----------------------------')
             console.log('图片下载成功')
             console.log('----------------------------')
+            fs.writeFileSync('data.json', JSON.stringify(fetchData))
         }
     );
 }
