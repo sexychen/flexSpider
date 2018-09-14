@@ -1,0 +1,18 @@
+{
+  "name": "felxSpider",
+  "version": "1.0.0",
+  "description": "",
+  "main": "fetch.js",
+  "author": "sexychen",
+  "contributors": [
+    "sexychen <sexychen@126.com>"
+  ],
+  "license": "ISC",
+  "dependencies": {
+    "JSONStream": "^1.3.1",
+    "async": "^2.1.4",
+    "cheerio": "^0.22.0",
+    "iconv-lite": "^0.4.15",
+    "request": "^2.79.0"
+  }
+}
