@@ -5,11 +5,15 @@ var request = require('request'),
     fs = require('fs');
 
 var fetchData = []
-var imgDir = './imgs/'
+var LOGO_IMG_DIR = './logo/'
+var CAR_IMG_DIR = './imgs/'
+var MIN_PRICE = 10000000
 
 function fetchBrand() {
     var pageUrls = []
     var chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'];
+    // var chars = ['A'];
+
     for (var char of chars) {
         pageUrls.push(
             {
@@ -39,27 +43,73 @@ function fetchBrand() {
                         char: urlItem.char,
                         bCode: curBrands.eq(i).attr('id'),
                         bName: curBrands.eq(i).find('dt div a').text(),
-                        series: [],
+                        logo: 'http:' + curBrands.eq(i).find('dt a img').attr('src')
                     }
+                    // 单位: 万
+                    var brandMinPirce = MIN_PRICE, brandMaxPirce = 0;
+                    var series = [];
 
                     var curSeriesBase = curBrands.eq(i).find('h4')
                     for (var j = 0; j < curSeriesBase.length; j++) {
                         var curSeries = curSeriesBase.eq(j).find('a')
 
-                        // 获取图库的baseDiv: 默认下一个元素,如果是指导价,则是再下一个;
-                        var targetImgBaseDiv = curSeriesBase.eq(j).next()
-                        var tmpTargetDivA = targetImgBaseDiv.find('a')
-                        if (tmpTargetDivA && tmpTargetDivA.length <= 1) {
-                            targetImgBaseDiv = targetImgBaseDiv.next()
+                        var priceBaseDiv = undefined, imgBaseDiv = undefined;
+                        var nextBaseDiv = curSeriesBase.eq(j).next()
+                        var nextBaseDivA = nextBaseDiv.find('a')
+
+                        // 如果只有一个A,则是指导价的div,再下一个才是图库的div
+                        if (nextBaseDivA && nextBaseDivA.length <= 1) {
+                            priceBaseDiv = nextBaseDiv;
+                            imgBaseDiv = nextBaseDiv.next();
+                        }
+                        // 如果是多于一个A,则是缺少指导价,直接就是图库的div
+                        else {
+                            imgBaseDiv = nextBaseDiv;
+                        }
+
+                        // 计算指导价的最低价和最高价
+                        var priceData = {};
+                        if (priceBaseDiv) {
+                            // 22.98-35.48万
+                            var priceText = priceBaseDiv.find('a').eq(0).text();
+                            if (priceText && priceText.length > 3 && priceText.indexOf('-') > 0) {
+                                var index = priceText.indexOf('-');
+                                var minP = priceText.substring(0, index);
+                                var maxP = priceText.substring(index + 1, priceText.length - 1)
+                                priceData = {
+                                    sMinP: minP,
+                                    sMaxP: maxP
+                                }
+
+                                // 同时计算品牌的最低价和最高价
+                                if (Number(minP) < brandMinPirce) {
+                                    brandMinPirce = Number(minP);
+                                }
+                                if (Number(maxP) > brandMaxPirce) {
+                                    brandMaxPirce = Number(maxP);
+                                }
+                            }
                         }
 
                         // 除了图片的数据先丢进去
-                        obj.series.push({
+                        series.push({
                             sCode: curSeriesBase.eq(j).parent().attr('id'),
                             sName: curSeries.eq(0).text(),
-                            page: 'http:' + targetImgBaseDiv.children().first().next().attr('href')
+                            ...priceData,
+                            page: 'http:' + imgBaseDiv.children().first().next().attr('href')
                         })
                     }
+
+                    // 品牌的最低价和最高价
+                    if (brandMinPirce != MIN_PRICE) {
+                        obj.bMinP = brandMinPirce;
+                    }
+                    if (brandMaxPirce != 0) {
+                        obj.bMaxP = brandMaxPirce;
+                    }
+                    obj.series = series;
+
+                    // 当前车的品牌
                     fetchData.push(obj)
                 }
                 callback(null, urlItem.url + 'Call back content')
@@ -82,7 +132,7 @@ function fetchBrand() {
 }
 
 /**
- * 爬取图片地址
+ * 爬取车身外观的图片地址
  */
 function fetchImgUrl() {
     var seriesArr = []
@@ -107,7 +157,7 @@ function fetchImgUrl() {
             var html = iconv.decode(body, 'gb2312')
             var $ = cheerio.load(html);
             var listDivs = $('.carpic-list03');
-            var selectedImdDiv;
+            var selectedImdDiv = undefined;
             for (var k = 0; k < listDivs.length; k++) {
                 if (listDivs.eq(k).prev().children().first().text() === '车身外观') {
                     selectedImdDiv = listDivs.eq(k);
@@ -130,15 +180,53 @@ function fetchImgUrl() {
         },
         function (err, result) {
             console.log('----------------------------')
-            console.log('图片地址抓取成功')
+            console.log('车身图片地址抓取成功')
             console.log('----------------------------')
-            fetchImg()
+            fs.writeFileSync('data.json', JSON.stringify(fetchData))
+            fetchLogo()
         }
     );
 }
 
 /**
- * 爬取图片
+ * 下载车logo图片
+ */
+function fetchLogo() {
+    var brandCarArr = []
+    // 轮询所有车系
+    for (var brandCar of fetchData) {
+        brandCarArr.push(brandCar)
+    }
+
+    var reptileMove = function (brandCar, callback) {
+        if (brandCar.logo && brandCar.logo != null && brandCar.logo != 'null') {
+            request({ uri: brandCar.logo, encoding: 'binary' }, function (error, response, body) {
+                if (!error && response.statusCode == 200) {
+                    fs.writeFile(LOGO_IMG_DIR + brandCar.bCode + '_1.jpg', body, 'binary', function (err) {
+                        if (err) { console.error('error:' + err + ',bCode=' + brandCar.bCode + ',img=' + brandCar.logo); }
+                    });
+                }
+            });
+        }
+        callback(null, brandCar.logo + 'Call back content');
+    };
+
+    async.mapLimit(
+        brandCarArr, 1,
+        function (brandCar, callback) {
+            reptileMove(brandCar, callback);
+        },
+        function (err, result) {
+            console.log('----------------------------')
+            console.log('logo图片下载成功')
+            console.log('----------------------------')
+            // fs.writeFileSync('data.json', JSON.stringify(fetchData))
+        }
+    );
+}
+
+/**
+ * 下载车身外观的图片
  */
 function fetchImg() {
     var seriesArr = []
@@ -153,7 +241,7 @@ function fetchImg() {
         if (series.img != 'null') {
             request({ uri: series.img, encoding: 'binary' }, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
-                    fs.writeFile(imgDir + series.sCode + '_1.jpg', body, 'binary', function (err) {
+                    fs.writeFile(CAR_IMG_DIR + series.sCode + '_1.jpg', body, 'binary', function (err) {
                         if (err) { console.error('error:' + err + ',sCode=' + series.sCode + ',img=' + series.img); }
                     });
                 }
@@ -172,9 +260,9 @@ function fetchImg() {
         },
         function (err, result) {
             console.log('----------------------------')
-            console.log('图片下载成功')
+            console.log('车身图片下载成功')
             console.log('----------------------------')
-            fs.writeFileSync('data.json', JSON.stringify(fetchData))
+            // fs.writeFileSync('data.json', JSON.stringify(fetchData))
         }
     );
 }
