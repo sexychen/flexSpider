@@ -180,4 +180,3 @@ function fetchImg() {
 }
 
 fetchBrand()
-
