@@ -1,8 +1,8 @@
 var fs = require('fs');
 
-function analysis(){
+function analysis() {
 
-    fs.readFile('/Users/sexychen/myFile/work/shell/car/data.json', "utf8", function(err, data){
+    fs.readFile('/Users/sexychen/myFile/work/shell/car/data.json', "utf8", function (err, data) {
         if (!data) {
             console.error('data is null');
             return;
@@ -15,8 +15,9 @@ function analysis(){
 
         for (let index = 0; index < jsonData.length; index++) {
             var car = jsonData[index];
-            if (car.bMaxP && car.bMaxP >= 100 && car.bMinP && car.bMinP >= 30) {
-                console.error(car.bName);
+            // if (car.bMaxP && car.bMaxP >= 100 && car.bMinP && car.bMinP >= 30) {
+            if (!car.bMaxP && !car.bMinP && car.bName.match(/^[a-zA-Z]+/)) {
+                console.error(car.bName + ': ' + car.series[0].page);
             }
         }
     });
