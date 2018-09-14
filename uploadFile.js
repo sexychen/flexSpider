@@ -1,14 +1,14 @@
-var ossClient = require('ali-oss')
-var client = new ossClient({
-  region: '*******',
-  accessKeyId: '*******',
-  accessKeySecret: '*******',
-  bucket: '*******'
+let OSS = require('ali-oss')
+let client = new OSS({
+  region: '<Your region>',
+  accessKeyId: '<Your AccessKeyId>',
+  accessKeySecret: '<Your AccessKeySecret>',
+  bucket: 'Your bucket name'
 });
 
-function put() {
+async function put () {
   try {
-    var result = client.put('imgs.tar.gz', './imgs.tar.gz');
+    let result = await client.put('test123', './test123');
     console.log(result);
   } catch (e) {
       console.log(e);
