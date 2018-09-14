@@ -6,16 +6,25 @@ let client = new OSS({
   bucket: 'Your bucket name'
 });
 
-async function multipartUpload () {
+async function multipartUpload() {
   try {
-    let result = await client.multipartUpload('imgs.tar.gz', './imgs.tar.gz');
-  console.log(result);
+    const progress = async function (p) {
+      console.error(p);
+    };
+    let result = await client.multipartUpload('imgs.tar.gz', './imgs.tar.gz', {
+      progress,
+      meta: {
+        year: 2018
+      }
+    });
+    console.error(result);
   } catch (e) {
-   // 捕获超时异常
+    console.error(e)
+    // 捕获超时异常
     if (e.code === 'ConnectionTimeoutError') {
-      console.log("Woops,超时啦!");
+      console.error("Woops,超时啦!");
     }
-    console.log(e)
+    console.error(e)
   }
 }
 
