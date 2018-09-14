@@ -77,8 +77,8 @@ function fetchBrand() {
                                 var minP = priceText.substring(0, index);
                                 var maxP = priceText.substring(index + 1, priceText.length - 1)
                                 priceData = {
-                                    sMinP: minP,
-                                    sMaxP: maxP
+                                    sMinP: Number(minP),
+                                    sMaxP: Number(maxP)
                                 }
 
                                 // 同时计算品牌的最低价和最高价
@@ -111,7 +111,11 @@ function fetchBrand() {
 
                     // 当前车的品牌
                     fetchData.push(obj)
+
                 }
+                html= undefined;
+                $ = undefined;
+                curBrands = undefined;
                 callback(null, urlItem.url + 'Call back content')
             }
         );
@@ -183,7 +187,7 @@ function fetchImgUrl() {
             console.log('车身图片地址抓取成功')
             console.log('----------------------------')
             fs.writeFileSync('data.json', JSON.stringify(fetchData))
-            fetchLogo()
+            // fetchLogo()
         }
     );
 }
@@ -267,4 +271,7 @@ function fetchImg() {
     );
 }
 
+/**
+ * node --max-old-space-size=3072 fetch
+ */
 fetchBrand()
