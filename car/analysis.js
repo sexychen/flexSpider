@@ -15,7 +15,7 @@ function analysis(){
 
         for (let index = 0; index < jsonData.length; index++) {
             var car = jsonData[index];
-            if (car.bMaxP && car.bMaxP >= 100) {
+            if (car.bMaxP && car.bMaxP >= 100 && car.bMinP && car.bMinP >= 30) {
                 console.error(car.bName);
             }
         }
