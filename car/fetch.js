@@ -11,8 +11,8 @@ var MIN_PRICE = 10000000
 
 function fetchBrand() {
     var pageUrls = []
-    var chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'];
-    // var chars = ['A'];
+    // var chars = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'V', 'W', 'X', 'Y', 'Z'];
+    var chars = ['A', 'B', 'C', 'D', 'E', 'F'];
 
     for (var char of chars) {
         pageUrls.push(
@@ -161,18 +161,28 @@ function fetchImgUrl() {
             var html = iconv.decode(body, 'gb2312')
             var $ = cheerio.load(html);
             var listDivs = $('.carpic-list03');
-            var selectedImdDiv = undefined;
+            var firstImgDiv = undefined, secondImgDiv = undefined;
             for (var k = 0; k < listDivs.length; k++) {
                 if (listDivs.eq(k).prev().children().first().text() === '车身外观') {
-                    selectedImdDiv = listDivs.eq(k);
+                    firstImgDiv = listDivs.eq(k);
+                }
+                else if(listDivs.eq(k).prev().children().first().text() === '中控方向盘'){
+                    secondImgDiv = listDivs.eq(k);
                 }
             }
-            var sourcePath = selectedImdDiv && selectedImdDiv != null ? selectedImdDiv.children().first().children().first().children().first().children().first().attr('src') : undefined;
-            series.img = sourcePath && sourcePath != null ? 'http:' + sourcePath.replace('/t_', '/') : 'null'
+            // 车身外观的ui
+            var firstUl = firstImgDiv && firstImgDiv != null ? firstImgDiv.children().first() : undefined;
+            var secondUl = secondImgDiv && secondImgDiv != null ? secondImgDiv.children().first() : undefined;
+            var sourcePath1 = firstUl && firstUl != null ? firstUl.children().first().children().first().children().first().attr('src') : undefined;
+            var sourcePath2 = firstUl && firstUl != null ? firstUl.children().first().next().children().first().children().first().attr('src') : undefined;
+            var sourcePath3 = secondUl && secondUl != null ? secondUl.children().first().children().first().children().first().attr('src') : undefined;
+            series.img1 = sourcePath1 && sourcePath1 != null ? 'http:' + sourcePath1.replace('/t_', '/') : 'null'
+            series.img2 = sourcePath2 && sourcePath2 != null ? 'http:' + sourcePath2.replace('/t_', '/') : 'null'
+            series.img3 = sourcePath3 && sourcePath3 != null ? 'http:' + sourcePath3.replace('/t_', '/') : 'null'
             html = undefined
             $ = undefined
             listDivs = undefined
-            selectedImdDiv = undefined
+            firstImgDiv = undefined
             callback(null, series.page + 'Call back content');
         });
     };
@@ -186,8 +196,8 @@ function fetchImgUrl() {
             console.log('----------------------------')
             console.log('车身图片地址抓取成功')
             console.log('----------------------------')
-            fs.writeFileSync('data.json', JSON.stringify(fetchData))
-            // fetchLogo()
+            // fs.writeFileSync('data.json', JSON.stringify(fetchData))
+            fetchImg()
         }
     );
 }
@@ -225,6 +235,7 @@ function fetchLogo() {
             console.log('logo图片下载成功')
             console.log('----------------------------')
             // fs.writeFileSync('data.json', JSON.stringify(fetchData))
+            // fetchImg()
         }
     );
 }
@@ -242,19 +253,34 @@ function fetchImg() {
     }
 
     var reptileMove = function (series, callback) {
-        if (series.img != 'null') {
-            request({ uri: series.img, encoding: 'binary' }, function (error, response, body) {
+        // if (series.img1 != 'null') {
+        //     request({ uri: series.img1, encoding: 'binary' }, function (error, response, body) {
+        //         if (!error && response.statusCode == 200) {
+        //             fs.writeFile(CAR_IMG_DIR + series.sCode + '_1.jpg', body, 'binary', function (err) {
+        //                 if (err) { console.error('error:' + err + ',sCode=' + series.sCode + ',img=' + series.img1); }
+        //             });
+        //         }
+        //     });
+        // }
+        // if (series.img2 != 'null') {
+        //     request({ uri: series.img2, encoding: 'binary' }, function (error, response, body) {
+        //         if (!error && response.statusCode == 200) {
+        //             fs.writeFile(CAR_IMG_DIR + series.sCode + '_2.jpg', body, 'binary', function (err) {
+        //                 if (err) { console.error('error:' + err + ',sCode=' + series.sCode + ',img=' + series.img2); }
+        //             });
+        //         }
+        //     });
+        // }
+        if (series.img3 != 'null') {
+            request({ uri: series.img3, encoding: 'binary' }, function (error, response, body) {
                 if (!error && response.statusCode == 200) {
-                    fs.writeFile(CAR_IMG_DIR + series.sCode + '_1.jpg', body, 'binary', function (err) {
-                        if (err) { console.error('error:' + err + ',sCode=' + series.sCode + ',img=' + series.img); }
+                    fs.writeFile(CAR_IMG_DIR + series.sCode + '_3.jpg', body, 'binary', function (err) {
+                        if (err) { console.error('error:' + err + ',sCode=' + series.sCode + ',img=' + series.img3); }
                     });
-                }
-                else {
-                    series.error = '1'
                 }
             });
         }
-        callback(null, series.img + 'Call back content');
+        callback(null, 'Call back content');
     };
 
     async.mapLimit(
