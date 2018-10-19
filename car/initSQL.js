@@ -28,10 +28,13 @@ function initSQL(jsonData) {
             car.series.forEach(series => {
                 var medias = '';
                 if (series.imgs && series.imgs.length > 0) {
-                    series.imgs.forEach(img => {
-                        var path = '{\"path\":\"' + img.path+ '\",\"mediaType\":0}';
-                        medias = medias + '{\"path\":\"' + img.path+ '\",\"mediaType\":0}' + ','
-                    });
+                    for (let j = 0; j < series.imgs.length; j++) {
+                        var img = series.imgs[j];
+                        medias = medias + '{\"path\":\"' + img.path+ '\",\"mediaType\":0}';
+                        if (j != series.imgs.length - 1) {
+                            medias = medias + ',';
+                        }
+                    }
                 }
                 if (medias != '') {
                     medias = '[' + medias + ']';
